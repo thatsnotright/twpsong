@@ -1,0 +1,16 @@
+(defn player
+  [t speed notes]
+  (let [n (first notes)
+        notes (next notes)
+        t-next (+ t speed)]
+    (when n
+      (at t
+          (piano (note n)))
+      (apply-at t-next #'player [t-next speed notes]))))
+
+
+
+(defn play-scale [time notes sep]
+  (let [next-tick (+ time sep)]
+    (at time (piano (first notes)))
+    (apply-at #'play-scale next-tick next-tick (next notes) sep)))

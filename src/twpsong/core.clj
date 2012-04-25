@@ -1,7 +1,7 @@
 (ns twpsong.core
   (:use 
-	[overtone.live]
-	[twpsong.sound :as twp]
+   [overtone.core]
+   [twpsong.sound :as twp]
    [twitter.oauth]
    [twitter.callbacks]
    [twitter.callbacks.handlers]
@@ -17,10 +17,31 @@
    (twitter.callbacks.protocols SyncSingleCallback))
 )
 
+(boot-external-server)
+(use 'overtone.inst.piano)
+
+
 (defn callkick 
   "kick drum"
-  [response baos]
-  (twp/kick)
+  [response content]
+  (def tweet (:text (json/read-json (str content))))
+  (def strcnt (count tweet))
+;  (if (> strcnt 30) (if (< strcnt 35) (twp/twpkick) ))
+   (play-notes (now) 320 piano 
+	(map 
+		#(nth notes %) 
+		(map 
+			#(int 
+				(/ 
+					(* 
+						(- (int %) 32)
+					 8)
+				 94)
+			 )
+		  (seq tweet)
+		)
+	)
+   )
 )
 
 (defn updatedub
@@ -35,27 +56,25 @@
      (AsyncStreamingCallback. callkick (comp println response-return-everything)
                   exception-print) )
 
-(def ^:dynamic *dubstep-callback* 
-     (AsyncStreamingCallback. updatedub (comp println response-return-everything)
-                  exception-print) )
-
-(def ^:dynamic *creds* (make-oauth-creds "i6dB5Xjl4z2hw6kEUsu0Zg"
-                             "AqoPKbPHurK9tJPMogvioPf5iwO7RQMXwWfsitlvg"
-                         "251902819-Gji3Z2uVba0Luw7xHx6hJ3pFkghYXuGrWlNeKkXc"
-                         "Vpe02tSHL73URmPkBgUFLeSFXPDhWvmmnFMafP6TKhY"))
+(def ^:dynamic *creds* (make-oauth-creds "DWQeZVQiFG1V0abuu5yKw"
+                             "EXFHdOtIIBzzW6W4l5Aq8tx94pRUFv3pjHGLTqx8l4"
+                         "562448092-aranxSAuTHi7BXcB9OMq25iq09qroEC4yEUieKwB"
+                         "TyIFXRr5RclyfDeic7wMmnZmrpcqSElZWWeOkehKqOY"))
 
 (defn -main [& args]
-	(twp/kick)
-	(def ^:dynamic *dubstepid* (:target (dubstep)))
-	(statuses-filter :params {:track "Tello"}
+	(Thread/sleep 1000)
+	(twp/twpkick)
+;	(def ^:dynamic *dubstepid* (:target (dubstep)))
+;	(def dubcallback (fn [response baos] (updatedub response baos *dubstepid*)));
+;	(statuses-filter :params {:track "IADMIT"}
+;	       :oauth-creds *creds*
+;	       :callbacks (AsyncStreamingCallback. dubcallback (comp println response-return-everything)
+;                 exception-print))
+
+	(statuses-filter :params {:track "twpsong"}
 	       :oauth-creds *creds*
 	       :callbacks *kicker-callback*)
-	(Thread/sleep 1000)
-	(def dubcallback (fn [response baos] (updatedub response baos *dubstepid*)))
-	(statuses-filter :params {:track "Tello"}
-	       :oauth-creds *creds*
-	       :callbacks (AsyncStreamingCallback. dubcallback (comp println response-return-everything)
-                  exception-print))
+
 	(Thread/sleep 60000)
 	(stop)
 	(System/exit 0)
