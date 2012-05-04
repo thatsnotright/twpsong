@@ -1,5 +1,5 @@
 (ns twpsong.core
-  (:use 
+  (:use
    [overtone.core]
    [twpsong.sound :as twp]
    [twpsong.feeling]
@@ -25,56 +25,76 @@
 
 (def ^:dynamic drumbpm 120)
 
-(defn callpiano 
+(defn callpiano
   "play some piano notes based on a tweet"
   [content]
   (def tweet (str content)); (:text (json/read-json (str content))))
   (def strcnt (count tweet))
 ;  (if (> strcnt 30) (if (< strcnt 35) (twp/twpkick) ))
-   (play-notes (now) pianodelay piano 
-	(map 
-		#(nth notes %) 
-		(map 
-			#(int 
-				(/ 
-					(* 
-						(- (int %) 32)
-					 8)
-				 94)
-			 )
-		  (seq tweet)
-		)
-	)
+   (play-notes (now) pianodelay piano
+        (map
+                #(nth notes %)
+                (map
+                        #(int
+                                (/
+                                        (*
+                                                (- (int %) 32)
+                                         8)
+                                 94)
+                         )
+                  (seq tweet)
+                )
+        )
    )
 )
 
+(def ^:dynamic *dubstepid* (:target (dubstep)))
+
+(defn updatedub
+   "update params for dubstep background"
+   [params]
+
+   (def strcnt (count (params "tweet")))
+   (def cwobblerate 280) ;((node-get-control *dubstepid*) :wobble))
+   (def wobrate
+        (if
+                (= (params "emotion") :happy) (- cwobblerate strcnt) (+ cwobblerate strcnt)
+        )
+        )
+   (if (< 3 wobrate) (def wrate 3) (if (> 50 wobrate) (def wrate 50) nil))
+
+   (ctl *dubstepid* :wobble wrate)
+)
 
 (defmulti play-sound
   (fn[x] (x "inst")))
 
 (defmethod play-sound 3 [params];
-	(callpiano (params "tweet"))
+        (if (= (params "emotion") :happy)
+                (callpiano (params "tweet"))
+                (callpiano "SSSSSS")
+
+        )
 )
 
 (defmethod play-sound 1 [params]
-	(twp/round-kick)
+        (twp/round-kick)
 )
 
 (defmethod play-sound 2 [params]
-	(twp/rise-fall-pad)
+        (twp/rise-fall-pad)
 )
 
 (defmethod play-sound :default [params]
-;	(println (compute-emotion (word-split (params "tweet"))))	
-;	(println "no sound")
-	(updatedub (params "tweet"))
+        (updatedub params)
 )
 
 
 (defn pick-and-play [tweet]
-	(def instselect (rand-int 100))
-	(def parammap {"inst" instselect, "tweet" tweet})
-	(play-sound parammap)
+        (def instselect (rand-int 100))
+        (def emot (compute-emotion (word-split tweet)))
+        (def parammap {"inst" instselect, "tweet" tweet, "emotion" emot })
+        (play-sound parammap)
 )
 
 (def ^:dynamic *creds* (make-oauth-creds "DWQeZVQiFG1V0abuu5yKw"
@@ -82,40 +102,26 @@
                          "562448092-aranxSAuTHi7BXcB9OMq25iq09qroEC4yEUieKwB"
                          "TyIFXRr5RclyfDeic7wMmnZmrpcqSElZWWeOkehKqOY"))
 
-(def ^:dynamic *dubstepid* (:target (dubstep)))
-
-(defn updatedub
-   "update params for dubstep background"
-   [content]
-   
-   (def strcnt (count content))
-   (ctl *dubstepid* :wobble (/ (+ strcnt 1) 10))
-)
-(defn restart-dub-callback
-	[response content]
-	(updatedub response content)
-
-)
 
 (defn decider-callback
-	[response content]
-	(def tweet (str content)); (:text (json/read-json (str content))))
-	(def strcnt (count tweet))
+        [response content]
+        (def tweet (str content)); (:text (json/read-json (str content))))
+        (def strcnt (count tweet))
 
-	(pick-and-play tweet)
+        (pick-and-play tweet)
 )
 
 
 (defn -main [& args]
-	(Thread/sleep 1000)
-	(twp/twpkick)
+        (Thread/sleep 1000)
+        (twp/twpkick)
 
-	(statuses-sample 
-	       :oauth-creds *creds*
-	       :callbacks (AsyncStreamingCallback. decider-callback (comp println response-return-everything)
+        (statuses-sample
+               :oauth-creds *creds*
+               :callbacks (AsyncStreamingCallback. decider-callback (comp println response-return-everything)
                   exception-print))
 
-	(Thread/sleep 60000)
-	(stop)
-	(System/exit 0)
+        (Thread/sleep 60000)
+        (stop)
+        (System/exit 0)
 )
