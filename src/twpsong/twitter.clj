@@ -21,11 +21,11 @@
                          "Vpe02tSHL73URmPkBgUFLeSFXPDhWvmmnFMafP6TKhY"))
 
 (def ^:dynamic *response* (user-stream :oauth-creds *creds*))
-	(Thread/sleep 60000)
-	((:cancel (meta *response*)))
-(def ^:dynamic 
-     *custom-streaming-callback* 
-     (AsyncStreamingCallback. (comp println #(:text %) json/read-json #(str %2)) 
+        (Thread/sleep 60000)
+        ((:cancel (meta *response*)))
+(def ^:dynamic
+     *custom-streaming-callback*
+     (AsyncStreamingCallback. (comp println #(:text %) json/read-json #(str %2))
                       (comp println response-return-everything)
                   exception-print))
 
