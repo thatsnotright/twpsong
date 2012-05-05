@@ -15,7 +15,9 @@
   )
   (:import
    (twitter.callbacks.protocols AsyncStreamingCallback)
-   (twitter.callbacks.protocols SyncSingleCallback))
+   (twitter.callbacks.protocols SyncSingleCallback)
+   (java.util Date)
+   )
 )
 
 
@@ -60,9 +62,9 @@
         (if
                 (= (params "emotion") :happy) (- cwobblerate strcnt) (+ cwobblerate strcnt)
         )
-        )
-   (if (< 3 wobrate) (def wrate 3) (if (> 50 wobrate) (def wrate 50) nil))
-
+   )
+;   (if (< 3 wobrate) (def wrate 3) (if (> 50 wobrate) (def wrate 50) ))
+(def wrate 8)
    (ctl *dubstepid* :wobble wrate)
 )
 
@@ -70,11 +72,10 @@
   (fn[x] (x "inst")))
 
 (defmethod play-sound 3 [params];
-        (if (= (params "emotion") :happy)
-                (callpiano (params "tweet"))
-                (callpiano "SSSSSS")
-
-        )
+  (if (= (params "emotion") :happy)
+    (doseq [n [96 100 103]] (piano n))
+    (doseq [n [55 59 64]] (piano n))
+  )
 )
 
 (defmethod play-sound 1 [params]
@@ -89,12 +90,20 @@
         (updatedub params)
 )
 
+(def prevt 0)
+
+(defn decided-to-play [tweet]
+  (def instselect (rand-int 4))
+  (def emot (compute-emotion (word-split tweet)))
+  (def parammap {"inst" instselect, "tweet" tweet, "emotion" emot })
+  (play-sound parammap)
+  )
 
 (defn pick-and-play [tweet]
-        (def instselect (rand-int 100))
-        (def emot (compute-emotion (word-split tweet)))
-        (def parammap {"inst" instselect, "tweet" tweet, "emotion" emot })
-        (play-sound parammap)
+  (def curt (.getTime (new Date)))
+  (if (> (- curt 100) prevt)
+      (decided-to-play tweet))
+  (def prevt curt)
 )
 
 (def ^:dynamic *creds* (make-oauth-creds "DWQeZVQiFG1V0abuu5yKw"
