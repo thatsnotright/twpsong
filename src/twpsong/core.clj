@@ -76,7 +76,12 @@
     (doseq [n [96 100 103]] (piano n))
     (doseq [n [55 59 64]] (piano n))
   )
-)
+  )
+
+;; play a piano melody from the text mapped to an octave
+(defmethod play-sound 0 [params]
+  (callpiano (params "tweet"))
+  )
 
 (defmethod play-sound 1 [params]
         (twp/round-kick)
@@ -91,20 +96,34 @@
 )
 
 (def prevt 0)
+; last time we played a piano melody
+(def last_piano 0)
+; last time we played a base drum
+(def last_kick 0)
+
+; current bpm derived from average tweet length normalized
+; 140 bytes maps to 100-160 BPM
+(def bpm 142)
 
 (defn decided-to-play [tweet]
-  (def instselect (rand-int 4))
+;  (def instselect (rand-int 4))
   (def emot (compute-emotion (word-split tweet)))
+
   (def parammap {"inst" instselect, "tweet" tweet, "emotion" emot })
   (play-sound parammap)
   )
 
+;; since even 1% of twitter traffic is extreme we need to curtail
+;; our music a bit, so we try to narrow it down to 100ms
 (defn pick-and-play [tweet]
   (def curt (.getTime (new Date)))
+  ; 160-100 = 60 spread, so 1 to 140 maps 0-60 + 100
+  ;  (tweetlength/140)*60+100
+  (def targetbpm (+ 100 (* 60 (/ tweetlength 140))))
   (if (> (- curt 100) prevt)
-      (decided-to-play tweet))
+    (decided-to-play tweet))
   (def prevt curt)
-)
+  )
 
 (def ^:dynamic *creds* (make-oauth-creds "DWQeZVQiFG1V0abuu5yKw"
                              "EXFHdOtIIBzzW6W4l5Aq8tx94pRUFv3pjHGLTqx8l4"
