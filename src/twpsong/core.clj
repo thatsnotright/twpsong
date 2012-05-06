@@ -151,7 +151,7 @@
   (if (= true drop_on)
    (drop-the-bass)
     )
-  (if (> (- curt 100) (get-prevt))
+  (if (> (- curt 300) (get-prevt))
     (decided-to-play tweettext))
   (set-prevt curt)
   )
@@ -172,7 +172,6 @@
 
 
 (defn -main [& args]
-  (Thread/sleep 1000)
   (twp/twpkick)
 
   (statuses-sample
