@@ -12,9 +12,12 @@
 (def directory (clojure.java.io/file "samples/"))
 (def files (file-seq directory))
 (def filenames ( take-while #(= % %) files))
-(def filenames (next filenames))
-(def synthz (into-array (for [file filenames] (sample file) )) )
-
+(def filenames (sort (next filenames)))
+;(def synthz (into-array (for [file filenames] (sample file) )) )
+(def synthz (zipmap
+             (for [f filenames] (read-string (clojure.string/replace
+                                              (clojure.string/replace f ".wav" "") "samples/" "")))
+             (for [f filenames] (sample f))))
 
 ;; many of these sounds were pilfered from the internet, various authors
 ;; or the overtone examples themselves
